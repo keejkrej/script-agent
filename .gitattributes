@@ -1,0 +1,9 @@
+* text=auto eol=lf
+
+# Committed runtime artifacts are opaque binaries.
+*.wasm binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary

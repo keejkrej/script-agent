@@ -1,0 +1,36 @@
+# Native binaries and build output
+/script-agent
+/script-agent-artifacts
+/bin/
+/dist/
+*.exe
+*.dll
+*.dylib
+*.so
+*.test
+*.out
+
+# Logs
+*.log
+logs/
+
+# macOS
+.DS_Store
+
+# Build temp
+/tmp/
+/build/
+*.tmp
+
+# Local Go workspace (never commit machine-local replaces)
+go.work
+go.work.sum
+
+# Editor
+.idea/
+.vscode/
+
+# NOTE: committed wasm assets (internal/artifacts/quickpy.wasm and
+# third_party/pi-go/internal/quickjs/quickjs.wasm) are intentionally NOT
+# ignored. Only generated backups (*.wasm.bak) are ignored.
+*.wasm.bak

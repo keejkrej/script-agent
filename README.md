@@ -489,12 +489,14 @@ machine-local replace.
 
 ## License and redistribution
 
-There is no root `LICENSE` file in this repository. No license is granted for
-the original `script-agent` code, and it is not licensed for external
-redistribution beyond the owner's authorization. The owner must choose a
-license before publishing or redistributing this repository.
+Original `script-agent` code is licensed under the MIT License; see
+[`LICENSE`](LICENSE) at the repository root. Copyright (c) 2026 keejkrej and
+contributors.
 
-The vendored `third_party/pi-go` source and the `github.com/keejkrej/quickpy`
-dependency also have no license file at their pinned revisions. Their upstream
-projects must make their own licensing decisions. Third-party components that
-do carry licenses are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The vendored `third_party/pi-go` source is covered by the MIT grant from the
+`pi-go` project owner; a copy of that license is kept at
+[`third_party/pi-go/LICENSE`](third_party/pi-go/LICENSE). The
+`github.com/keejkrej/quickpy` dependency is MIT licensed at its project root.
+Third-party components that carry their own licenses are recorded in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and are not relicensed by the
+root `LICENSE`.

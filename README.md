@@ -12,6 +12,11 @@ a daemon.
 independently reviewed, but it is not production GA, not a Prime/RLM agent, and
 not a general OS sandbox.
 
+Published through PR **#1**:
+<https://github.com/keejkrej/script-agent/pull/1> (base `main`, head
+`feat/native-polyglot-core`). Use
+`gh pr view 1 --json state,mergeCommit` to resolve the final merge result.
+
 ## What works now
 
 - **Native Go library** (`github.com/keejkrej/script-agent`) and **CLI**

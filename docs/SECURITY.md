@@ -289,12 +289,14 @@ unavailable and Python/JavaScript are not covered by CI or tests on Windows.
 
 ## License and redistribution
 
-License and redistribution choices are not a runtime security control. There is
-no root `LICENSE` file in this repository, and no license is granted for the
-original `script-agent` code. The vendored `third_party/pi-go` source and the
-`github.com/keejkrej/quickpy` dependency also have no license file at their
-pinned revisions. The owner must choose licenses before external
-redistribution. See [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+License and redistribution choices are not a runtime security control. Original
+`script-agent` code is licensed under the MIT License; see
+[`LICENSE`](../LICENSE) at the repository root. The vendored
+`third_party/pi-go` source is covered by the `pi-go` owner's MIT grant (see
+[`third_party/pi-go/LICENSE`](../third_party/pi-go/LICENSE)), and the
+`github.com/keejkrej/quickpy` dependency is MIT licensed at its project root.
+Third-party components keep their own upstream licenses. See
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
 ## Reporting
 

@@ -1,17 +1,17 @@
 # Third-party notices
 
 This file records third-party provenance and required notices for
-`script-agent`. It does **not** license original `script-agent` code.
+`script-agent`. It does **not** relicense original `script-agent` code.
 
-There is no root `LICENSE` file in this repository. No license is granted for
-the original `script-agent` code, and it is not licensed for external
-redistribution beyond the owner's authorization. The owner must choose a
-license before publishing or redistributing this repository.
+Original `script-agent` code is licensed under the MIT License; see
+[`LICENSE`](LICENSE) at the repository root. Third-party components keep their
+own upstream licenses and are not relicensed by the root `LICENSE`.
 
-The vendored `third_party/pi-go` source and the
-`github.com/keejkrej/quickpy` dependency also have no license file at their
-pinned revisions. No license is asserted for their original code. Their
-upstream projects must make their own licensing decisions.
+The vendored `third_party/pi-go` source is covered by the MIT grant from the
+`pi-go` project owner (a copy is kept at
+[`third_party/pi-go/LICENSE`](third_party/pi-go/LICENSE)), and the
+`github.com/keejkrej/quickpy` dependency is MIT licensed at its project root.
+Third-party components that carry their own licenses are recorded below.
 
 The embedded WASM binaries do not carry SPDX headers. The notices below are
 based on the pinned upstream sources, package metadata, and the Go module cache
@@ -41,13 +41,11 @@ This file is not legal advice.
 
 - **Components:** the root Go package, `adapter/quickjs`, `process`, `cmd/*`,
   `scripts/*`, and the documentation in this repository.
-- **License:** none granted. There is no root `LICENSE` file.
-- **Status:** the owner must choose a license before external redistribution.
-  Do not describe this code as MIT, Apache-2.0, BSD, or any other license
-  without an explicit owner decision and a root license file.
-
-This notice does not grant permission to copy, modify, or redistribute the
-original code beyond what the owner authorizes.
+- **License:** MIT, under the root [`LICENSE`](LICENSE). Copyright (c) 2026
+  keejkrej and contributors.
+- **Status:** the owner has selected MIT for original `script-agent` code. This
+  grant covers only original code; third-party components keep their own
+  upstream licenses.
 
 ---
 
@@ -58,12 +56,14 @@ original code beyond what the owner authorizes.
 - **Upstream commit:** `69d43f6d9a4b83333d4582ca8c755457702d6576`
   (`Merge pull request #5 from keejkrej/chore/repo-cleanup-and-docs`).
 - **Vendored on:** 2026-11-19.
-- **License:** no root `LICENSE` file exists at the pinned commit. The raw
-  `LICENSE` URL returned 404 when checked on 2026-11-19. No license is
-  asserted here for the vendored source.
-- **Status:** the owner must decide the upstream project's license and wrap
-  this notice later. Do not assume the upstream repository is MIT or any other
-  license.
+- **License:** MIT. The `pi-go` project owner has granted MIT for original
+  `pi-go` code; a copy of the license is kept at
+  [`third_party/pi-go/LICENSE`](third_party/pi-go/LICENSE). The pinned commit
+  predates the addition of that root `LICENSE` file, but the owner's MIT grant
+  applies to the original source vendored here. Third-party components inside
+  the vendored tree keep their own upstream licenses.
+- **Status:** covered by the `pi-go` owner's MIT grant; no separate decision is
+  pending for the vendored original source.
 
 This directory is not a fork of the whole upstream repository. It is a minimal
 production closure plus the tests that pin the archived generic runtime
@@ -92,12 +92,12 @@ is not reproduced here because it does not cover copied code. See
 - **Version:** `v0.0.0-20261118233109-3897a879f468`.
 - **Commit:** `3897a879f468c47cb5c70235e3cf9872ab7fc8a8`
   (`Merge pull request #4 from keejkrej/m2/scripting-foundation`).
-- **License:** no `LICENSE` file exists at the pinned commit. The raw
-  `LICENSE` URL returned 404 when checked on 2026-11-19. The upstream README
-  and `THIRD_PARTY_NOTICES.md` state that no project license has been chosen.
-  No license is asserted here for QuickPy's original code.
-- **Status:** the owner must decide the QuickPy project's license before
-  external redistribution.
+- **License:** MIT at the QuickPy project root. The pinned commit predates the
+  addition of the root `LICENSE` file, but the owner's MIT grant applies to
+  original QuickPy code. Third-party components embedded in the artifact keep
+  their own upstream licenses.
+- **Status:** covered by the QuickPy owner's MIT grant; no separate decision is
+  pending for original QuickPy code.
 
 The compiled artifact `internal/artifacts/quickpy.wasm` embeds MicroPython and
 wasi-libc code. Those components are covered by the notices below. The QuickPy
@@ -796,14 +796,15 @@ is not reproduced here because it does not cover copied code. The pi-go/Prime
 design inspired parts of the codemode runtime, but design inspiration alone
 does not create a notice requirement.
 
-The vendored `third_party/pi-go` source is a separate upstream project with no
-root license at the pinned commit. Do not assign it the Prime agent's license
-or any other license without an explicit owner decision.
+The vendored `third_party/pi-go` source is a separate upstream project covered
+by the `pi-go` owner's MIT grant (see
+[`third_party/pi-go/LICENSE`](third_party/pi-go/LICENSE)). Do not assign it the
+Prime agent's license or any other license.
 
 If you redistribute this repository or a binary built from it:
 
-- add a root `LICENSE` for the original `script-agent` code;
-- confirm the licensing decision for the vendored pi-go source and QuickPy;
+- keep the root `LICENSE` for the original `script-agent` code;
+- keep the `pi-go` and QuickPy MIT grants with the vendored/dependency source;
 - re-check the pinned MicroPython, wasi-libc, QuickJS-WASI, QuickJS-NG, wazero,
   x/text, and x/sys revisions;
 - keep this notice file and the upstream license texts with the distribution.

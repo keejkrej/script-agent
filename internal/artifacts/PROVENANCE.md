@@ -56,7 +56,8 @@ go run ./cmd/script-agent-artifacts verify
 
 ## License
 
-No license is asserted here for the QuickPy project itself; the owner will
-decide the repository license and wrap this notice later. The guest is built on
-MicroPython 1.29.0, which is distributed under the MIT license by the
-MicroPython project. This note does not relicense QuickPy.
+Original QuickPy code is MIT licensed under the QuickPy project root
+`LICENSE`. The pinned commit predates that file, but the owner's MIT grant
+applies to the original source. The guest is built on MicroPython 1.29.0, which
+is distributed under the MIT license by the MicroPython project. This note does
+not relicense third-party components.

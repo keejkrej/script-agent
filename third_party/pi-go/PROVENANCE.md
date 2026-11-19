@@ -114,8 +114,10 @@ The three deviations above are the only expected differences.
 
 ## License
 
-The upstream pi-go repository does not ship a root `LICENSE` file at the pinned
-commit. No license is asserted here for the vendored source; the owner will
-decide the repository license and wrap this notice later. The embedded
-`quickjs.wasm` is the upstream QuickJS-WASI build and keeps its own upstream
-terms.
+The upstream `pi-go` repository owner has granted MIT for original `pi-go`
+code. A copy of that license is kept at
+[`LICENSE`](LICENSE) in this vendored directory. The pinned commit
+`69d43f6d9a4b83333d4582ca8c755457702d6576` predates the addition of the
+upstream root `LICENSE` file, but the owner's MIT grant applies to the original
+source vendored here. The embedded `quickjs.wasm` is the upstream QuickJS-WASI
+build and keeps its own upstream terms.

@@ -1,0 +1,72 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: go test (linux amd64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.4'
+          cache: true
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Verify modules
+        run: go mod verify
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Vet integration
+        run: go vet -tags scriptagent_integration ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Race test
+        run: go test -race -timeout 20m ./...
+
+      - name: Integration test
+        run: go test -tags scriptagent_integration -run TestIntegration -count=1 .
+
+      - name: Integration suite
+        run: go test -tags scriptagent_integration -count=1 ./integration
+
+      - name: Vendor module tests
+        working-directory: third_party/pi-go
+        run: |
+          go vet ./codemode/...
+          go test -count=1 ./codemode/...
+
+      - name: Verify artifacts
+        run: go run ./cmd/script-agent-artifacts verify
+
+      - name: List artifacts
+        run: go run ./cmd/script-agent-artifacts list
+
+      - name: CLI version
+        run: go run ./cmd/script-agent --version
+
+      - name: Build
+        run: |
+          CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' ./cmd/script-agent ./cmd/script-agent-artifacts

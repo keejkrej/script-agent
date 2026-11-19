@@ -6,7 +6,7 @@ toolchain go1.27.4
 
 require (
 	github.com/keejkrej/pi-go v0.0.0
-	github.com/keejkrej/quickpy v0.0.0-20261118233109-3897a879f468
+	github.com/keejkrej/quickpy v0.0.0-20261119183116-9ef902956e91
 )
 
 require (

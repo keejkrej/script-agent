@@ -123,7 +123,7 @@ The script:
 
 - requires Zig 0.17.1 and wasm-opt 133;
 - clones the pinned QuickPy commit
-  `3897a879f468c47cb5c70235e3cf9872ab7fc8a8` into a throwaway directory;
+  `9ef902956e91cec53dd5c6c30b1d5b7023dfdf69` into a throwaway directory;
 - builds a clean guest;
 - verifies the exact size (256486 bytes) and SHA-256
   (`5fdd351a70e0f65a4b812ad21c34a0885f87e839aee7721164768907ad61f50a`);

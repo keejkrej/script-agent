@@ -15,8 +15,10 @@ generation step or a network download.
 ## Source
 
 - Repository: <https://github.com/keejkrej/quickpy>
-- Commit: `3897a879f468c47cb5c70235e3cf9872ab7fc8a8`
-  (`Merge pull request #4 from keejkrej/m2/scripting-foundation`)
+- Commit: `9ef902956e91cec53dd5c6c30b1d5b7023dfdf69`
+  (`legal: license original QuickPy code under MIT (#5)`). The guest source is
+  unchanged from the earlier `3897a87` build; that commit only added the root
+  `LICENSE` and licensing docs, so the artifact bytes and SHA-256 are identical.
 - Build entry point: `guest/build.sh`
 - MicroPython pin: `v1.29.0`, commit
   `0fd6c573ea815774668bbb16b8e197c8822368b2`

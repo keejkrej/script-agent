@@ -14,7 +14,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 QUICKPY_URL="https://github.com/keejkrej/quickpy.git"
-QUICKPY_COMMIT="3897a879f468c47cb5c70235e3cf9872ab7fc8a8"
+QUICKPY_COMMIT="9ef902956e91cec53dd5c6c30b1d5b7023dfdf69"
 EXPECTED_SIZE=256486
 EXPECTED_SHA256="5fdd351a70e0f65a4b812ad21c34a0885f87e839aee7721164768907ad61f50a"
 ZIG_VERSION="0.17.1"

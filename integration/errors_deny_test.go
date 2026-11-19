@@ -153,14 +153,21 @@ func TestCLISourceCaps(t *testing.T) {
 	requireStatus(t, decodeSingleJSON(t, atLimit.Stdout), scriptagent.StatusCompleted)
 
 	// A large source is a source-cap violation, never an "unsupported" result.
+	// Pass it through --file: a 300 KB --code value would exceed the OS
+	// per-argument limit (Linux MAX_ARG_STRLEN, 128 KiB) and fail in execve
+	// before the CLI parses it. The file reader caps at max+1 bytes.
 	huge := strings.Repeat("# padding\n", 30000) // 300 KB
-	big := runCLI(t, ws, nil, "--lang", "python", "--code", huge, "--workspace", ws)
+	hugePath := filepath.Join(ws, "huge.py")
+	if err := os.WriteFile(hugePath, []byte(huge), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	big := runCLI(t, ws, nil, "--lang", "python", "--file", hugePath, "--workspace", ws)
 	if big.ExitCode != 2 {
 		t.Fatalf("huge exit = %d, want 2", big.ExitCode)
 	}
 	bigRes := decodeSingleJSON(t, big.Stdout)
 	requireStatus(t, bigRes, scriptagent.StatusInvalidRequest)
-	if bigRes.Error == nil || bigRes.Error.Code != "source_too_large" {
+	if bigRes.Error == nil || bigRes.Error.Code != "file" || !strings.Contains(bigRes.Error.Message, "source limit") {
 		t.Fatalf("huge error = %+v", bigRes.Error)
 	}
 }

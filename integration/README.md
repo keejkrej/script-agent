@@ -84,6 +84,11 @@ The binary embeds both WASM guests. It runs Python and JavaScript with
   limitation; the empty-cwd/nonexistent-`TMPDIR` tests cover Python and
   JavaScript, which use embedded direct bytes and do not need a writable
   `TMPDIR`.
+- Prefer `--file` for large source bytes: a single `--code` argument is bounded
+  by the OS `execve` per-argument limit (Linux `MAX_ARG_STRLEN`, 128 KiB), so a
+  multi-hundred-KB `--code` value fails in `execve` before the CLI can enforce
+  its own source cap. `TestCLISourceCaps` therefore passes its oversized body
+  through a temp file.
 
 ## Failures requiring package owners
 

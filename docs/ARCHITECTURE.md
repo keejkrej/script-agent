@@ -46,7 +46,7 @@ The root module is `github.com/keejkrej/script-agent`. Its
 - `go 1.27.3`
 - `toolchain go1.27.4`
 - direct `github.com/keejkrej/pi-go v0.0.0`
-- direct `github.com/keejkrej/quickpy v0.0.0-20261118233109-3897a879f468`
+- direct `github.com/keejkrej/quickpy v0.0.0-20261119183116-9ef902956e91`
 - indirect `github.com/tetratelabs/wazero v1.12.0`
 - indirect `golang.org/x/sys v0.48.0`
 - indirect `golang.org/x/text v0.43.0`
@@ -82,7 +82,7 @@ stay legal. The upstream commit is
 
 `github.com/keejkrej/quickpy` is a direct module dependency, not vendored. The
 pinned pseudo-version resolves to commit
-`3897a879f468c47cb5c70235e3cf9872ab7fc8a8`. See
+`9ef902956e91cec53dd5c6c30b1d5b7023dfdf69`. See
 [internal/artifacts/PROVENANCE.md](../internal/artifacts/PROVENANCE.md).
 
 The vendored module's [go.mod](../third_party/pi-go/go.mod) requires wazero
@@ -298,7 +298,7 @@ interpreter.
 - Guest ABI: 4
 - Engine: MicroPython 1.29.0
 - Source: `github.com/keejkrej/quickpy` commit
-  `3897a879f468c47cb5c70235e3cf9872ab7fc8a8`
+  `9ef902956e91cec53dd5c6c30b1d5b7023dfdf69`
 - Build toolchain: Zig 0.17.1, wasm-opt (binaryen) 133
 - Embedded by [internal/artifacts/artifacts.go](../internal/artifacts/artifacts.go)
   via `//go:embed`.

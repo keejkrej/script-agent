@@ -89,9 +89,9 @@ is not reproduced here because it does not cover copied code. See
 ## 3. QuickPy
 
 - **Component:** `github.com/keejkrej/quickpy`, a direct Go module dependency.
-- **Version:** `v0.0.0-20261118233109-3897a879f468`.
-- **Commit:** `3897a879f468c47cb5c70235e3cf9872ab7fc8a8`
-  (`Merge pull request #4 from keejkrej/m2/scripting-foundation`).
+- **Version:** `v0.0.0-20261119183116-9ef902956e91`.
+- **Commit:** `9ef902956e91cec53dd5c6c30b1d5b7023dfdf69`
+  (`legal: license original QuickPy code under MIT (#5)`).
 - **License:** MIT at the QuickPy project root. The pinned commit predates the
   addition of the root `LICENSE` file, but the owner's MIT grant applies to
   original QuickPy code. Third-party components embedded in the artifact keep

@@ -11,28 +11,36 @@ written against the current code, not a future design.
 - one explicit workspace root,
 - one runtime-neutral capability adapter,
 - one engine per language,
-- one concurrency semaphore and lifecycle.
+- one concurrency semaphore and lifecycle,
+- one bounded, synchronous conversation loop over those engines.
 
-It does not own a model provider, a chat loop, a persistent environment, or a
-daemon. A caller constructs an `Agent`, submits a `Request`, and receives a
-`Result`.
+It does not own a persistent environment, a daemon, a chat UI, or a model
+catalog. A caller constructs an `Agent`, submits a `Request`, and receives a
+`Result`. The `agent` subcommand additionally constructs a `Conversation` over
+the `Agent` and one OpenAI-compatible `Model`.
 
-The public surface is in [api.go](../api.go) and [agent.go](../agent.go). The
-engine boundary is in [engine.go](../engine.go). The CLI is in
-[cmd/script-agent/main.go](../cmd/script-agent/main.go).
+The public surface is in [api.go](../api.go), [agent.go](../agent.go), and
+[conversation.go](../conversation.go). The engine boundary is in
+[engine.go](../engine.go). The provider boundary is the root `Model` interface;
+the only production implementation is
+[internal/openaicompatible](../internal/openaicompatible). The CLI is in
+[cmd/script-agent/main.go](../cmd/script-agent/main.go) and
+[cmd/script-agent/agent.go](../cmd/script-agent/agent.go).
 
 ## Repository layout
 
 | Path | Role |
 | --- | --- |
 | `api.go`, `agent.go`, `engine.go` | Public types, coordinator, engine boundary. |
+| `conversation.go` | Bounded conversation loop, tool contract, result normalization. |
 | `python.go` | QuickPy/MicroPython engine. |
 | `javascript.go` | pi-go codemode QuickJS engine. |
 | `bash.go`, `bash_process.go` | Bash engine and process adapter. |
 | `adapter/quickjs/` | Capability tools and the frozen `fs` prelude. |
 | `process/` | Low-level process primitive. |
 | `internal/artifacts/` | Embedded QuickPy wasm and metadata. |
-| `cmd/script-agent/` | CLI. |
+| `internal/openaicompatible/` | Stdlib-only OpenAI Chat Completions client. |
+| `cmd/script-agent/` | CLI, including the `agent` subcommand. |
 | `cmd/script-agent-artifacts/` | Artifact list/verify helper. |
 | `integration/` | Opt-in end-to-end tests for the native binary and public API. |
 | `scripts/rebuild-quickpy.sh` | Reproducible QuickPy rebuild. |
@@ -111,6 +119,43 @@ local replace.
 `Run` never returns a Go error. Invalid requests, denials, timeouts,
 cancellations, limits, and script failures are `Result` statuses. `New` returns
 an error only for an invalid configuration.
+
+## Conversation loop
+
+[conversation.go](../conversation.go) adds a bounded, synchronous loop over a
+`ScriptExecutor` and a `Model`. It does not change the execution core.
+
+1. `NewConversation(ConversationConfig)` validates the executor, the model, the
+   model id, and the executor's resolved `Config` boundaries. It does not call
+   the model or the executor.
+2. `Run(ctx, ConversationRequest)` starts a fresh transcript with the system
+   prompt and the user prompt. Each iteration is one model completion.
+3. The assistant message is appended exactly, including its tool calls. If it
+   has no tool calls, the conversation completes with its text.
+4. Tool calls are executed sequentially in response order. Each call is
+   validated against a strict JSON schema (`code` required; optional
+   `filename`, `timeout_ms`, `max_output_bytes`), mapped to one language, and
+   run through the executor. The model never supplies a language, permission,
+   environment, endpoint, credential, working directory, or process flag.
+5. Each tool result is normalized to a bounded JSON object and appended as a
+   `role:"tool"` message correlated by `tool_call_id`. The same normalized
+   value is stored in `ConversationResult.ToolResults`.
+6. The loop stops on a final response, a hard limit, a provider/protocol
+   failure, or context cancellation. A request that reaches `MaxTurns` never
+   causes an extra completion. `finish_reason:"length"` returns
+   `limit_exceeded` without executing possibly truncated calls.
+
+The tools are exactly `python_repl`, `javascript_repl`, and `bash_repl`. Bash
+needs both `ConversationRequest.AllowProcess` and the executor's
+`Config.AllowProcess`; the CLI's `--allow-process` sets both. A completed
+conversation may contain failed or denied tool results; those are observations
+for the model, not an automatic top-level failure.
+
+The provider boundary is the root `Model` interface. The only production
+implementation is `internal/openaicompatible`, a stdlib-only Chat Completions
+client. It requires a full HTTPS endpoint, reads exactly one named API-key
+environment variable, disables proxy lookup, never follows redirects, and
+always verifies TLS. An optional CA file adds explicit trust roots.
 
 ## Python engine
 
@@ -394,6 +439,12 @@ dependency set, and it has no local-workspace replace.
 | JavaScript memory | 256 MiB | Fixed in `javascript.go`. |
 | `MaxOutputBytesLimit` | 1 GiB | Caller-supplied cap. |
 | `MaxSourceBytesLimit` | 256 MiB | Caller-supplied cap. |
+| `MaxTurns` | 8 | Model completions; hard cap 32. |
+| `MaxTokens` | 4096 | Completion tokens per turn; hard cap 32768. |
+| `MaxToolCalls` | 16 | Executed tool calls; hard cap 64. |
+| `MaxToolResultBytes` | 64 KiB | Serialized tool result sent to the model; hard cap 1 MiB. |
+| `MaxHistoryBytes` | 4 MiB | Serialized transcript before each completion; hard cap 64 MiB. |
+| Provider response | 4 MiB | Fixed in `internal/openaicompatible`. |
 
 Output is retained in memory and bounded. QuickPy enforces the budget at the
 WASM call boundary, not by sampling a live stream. The vendored JavaScript

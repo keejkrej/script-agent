@@ -1,8 +1,8 @@
 // Package scriptagent is a shared, polyglot script execution coordinator.
 //
-// It is an execution library, not an LLM agent loop. One Agent owns one
-// explicit workspace root and dispatches a Request to one of three language
-// engines:
+// It is an execution library with a bounded, one-shot model loop, not a
+// general Prime/RLM agent. One Agent owns one explicit workspace root and
+// dispatches a Request to one of three language engines:
 //
 //   - Python: the QuickPy WASM guest (MicroPython), with the workspace exposed
 //     through the runtime-neutral capability bridge.
@@ -18,6 +18,10 @@
 // Run always returns a Result. A script failure, timeout, cancellation, limit,
 // or denial is a Result status, not a Go error. New returns an error only for
 // an invalid configuration.
+//
+// Conversation adds a bounded, synchronous loop over an Agent and a Model. It
+// is one-shot: no session persistence, no model catalog, and no chat UI. The
+// only production Model is internal/openaicompatible.
 package scriptagent
 
 import (

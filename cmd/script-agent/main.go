@@ -49,6 +49,12 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) int {
+	// The `agent` subcommand is the only subcommand. Every other invocation
+	// keeps the original single-script flag contract.
+	if len(args) > 0 && args[0] == "agent" {
+		return runAgent(args[1:], stdout, stderr)
+	}
+
 	fs := flag.NewFlagSet("script-agent", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() {

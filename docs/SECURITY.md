@@ -12,6 +12,12 @@ today. It is not a claim that the project is a general-purpose sandbox.
 - **Bash** runs as a host process with the host user's OS privileges. It is a
   controlled launcher, not a sandbox. `AllowWrites` does not confine Bash.
 
+The `agent` subcommand adds a third boundary: a model provider. The model is
+untrusted output, not a policy source. It can request tool calls, but it cannot
+grant itself writes, process execution, a language, an environment, an
+endpoint, or a credential. The user's prompt and tool results are sent to the
+endpoint the user chose; there is no model proxy or egress filter.
+
 The host application is responsible for policy: which workspace to open, which
 grants to enable, which source to run, and which programs Bash may execute.
 
@@ -28,6 +34,8 @@ grants to enable, which source to run, and which programs Bash may execute.
 | Filesystem outside workspace | Denied for Python/JavaScript | — | Bash can leave the workspace. |
 | Working directory | Workspace | — | Bash `Dir` is not a sandbox. |
 | `--file` source | Explicit user path | — | The CLI reads a host file the user names; it may be outside the workspace. |
+| Model provider | None | `agent` subcommand with an explicit endpoint and named key | Sends the prompt and tool results to the chosen HTTPS endpoint. |
+| Provider key | None | `--api-key-env NAME` | Read once from exactly that variable; sent only as `Authorization: Bearer`. |
 
 ## Workspace filesystem
 
@@ -212,6 +220,48 @@ is no process-tree guarantee. Bash is unavailable on Windows.
   the workspace with the host user's authority.
 - The result carries a warning that Bash runs with full OS privileges. The CLI
   also writes a short summary to stderr for non-completed results.
+
+## Model provider and agent loop
+
+The `agent` subcommand is the only place `script-agent` talks to a model. The
+provider is `internal/openaicompatible`, a stdlib-only Chat Completions client.
+
+- **Endpoint.** `--endpoint` must be an absolute HTTPS URL with an explicit
+  host and path. Plain HTTP, userinfo, fragments, and relative URLs are
+  rejected. The client never appends a path or guesses a base URL.
+- **Credential.** `--api-key-env NAME` reads exactly that environment variable
+  once. The value is sent only as `Authorization: Bearer ...`; it is never
+  placed in the URL, request body, query string, or an error message. The
+  client never reads `OPENAI_API_KEY`, `OPENAI_BASE_URL`, or any other ambient
+  provider configuration.
+- **Transport.** The transport sets `Proxy: nil`, so `HTTP_PROXY`,
+  `HTTPS_PROXY`, and `NO_PROXY` are not consulted. Redirects are never
+  followed, so the Authorization header cannot be replayed to another host.
+  TLS verification is always enabled; `--ca-file` only adds explicit trust
+  roots to the system pool.
+- **Response bounds.** The response body is bounded to 4 MiB. Non-2xx statuses,
+  non-JSON content types, SSE/streaming responses, zero or multiple choices,
+  wrong roles, and missing or duplicate tool-call ids are protocol failures.
+- **Egress.** The provider is a network boundary. The user's prompt and tool
+  results are sent to the endpoint the user chose. There is no model proxy or
+  egress filter, and the sandbox cannot stop a model from asking to read the
+  workspace. Treat the endpoint as a trusted recipient of the prompt and tool
+  output.
+- **Prompt injection.** The user is trusted; model output is not. The model
+  cannot grant itself writes or process execution. Tool arguments are
+  validated against a strict schema, and the executor's own grants still
+  apply. With `--allow-process`, Bash is a host process, not a sandbox, so a
+  model that asks for a privileged command gets the host user's authority.
+- **No persistence.** Each `Run` starts a fresh in-memory transcript. There is
+  no session file, no cross-run history, and no hidden context.
+- **Narrow wire profile.** The client speaks one non-streaming Chat Completions
+  request/response. Tool messages carry an optional `name`; an assistant
+  tool-call message serializes `content` as `""`, not `null`. Some strict
+  vendors reject that shape, so this is not a universal compatibility claim.
+- **Generic errors.** `Error` classifies a failure as transport, status, or
+  protocol and never includes the endpoint, request body, response body, or
+  key. An authentication failure is therefore not distinguished from other
+  status errors; that is a deliberate trade-off against debuggability.
 
 ## Tool callbacks and host trust
 

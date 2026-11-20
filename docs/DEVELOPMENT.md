@@ -38,8 +38,8 @@ go vet ./...
 ```
 
 - Root `./...` includes the root package, `adapter/quickjs`, `process`,
-  `internal/artifacts`, `integration` (no test files without the tag), and both
-  `cmd` packages.
+  `internal/artifacts`, `internal/openaicompatible`, `integration` (no test
+  files without the tag), and both `cmd` packages.
 - `go test -race ./...` is slower; CI runs it.
 - `go test ./...` does **not** include `third_party/pi-go`, because that is a
   separate Go module.
@@ -70,10 +70,13 @@ The `integration/` package builds the real `CGO_ENABLED=0` native binary and
 verifies the observable contract from the outside: CLI JSON framing, empty-cwd
 and missing-`TMPDIR` behavior for Python/JavaScript, shared workspace
 reads/writes, denial and error codes, limits, Bash process behavior, artifact
-list/verify, cross-compiles, and a clean-copy build with `-mod=readonly`. Bash
-itself needs a valid host `TMPDIR` because its private temp directory is created
-with `os.MkdirTemp`; a nonexistent `TMPDIR` is a documented Bash process
-limitation, not a build blocker. See
+list/verify, cross-compiles, and a clean-copy build with `-mod=readonly`. It
+also runs the `agent` subcommand against a local `httptest.NewTLSServer` with
+an explicit `--ca-file`, proving the two-completion tool loop, the
+`Authorization` header, the tool-result correlation, and Bash environment
+isolation and denial. Bash itself needs a valid host `TMPDIR` because its
+private temp directory is created with `os.MkdirTemp`; a nonexistent `TMPDIR`
+is a documented Bash process limitation, not a build blocker. See
 [integration/README.md](../integration/README.md) for the current file map,
 recorded results, and binary metrics.
 
@@ -167,6 +170,24 @@ echo $? # 3: process denied
 `--version` needs no workspace. `--code` and `--file` are mutually exclusive
 and exactly one is required. `--workspace` is required for execution.
 
+The `agent` subcommand needs a real HTTPS Chat Completions endpoint and a named
+API-key environment variable. It never reads an ambient key or base URL:
+
+```sh
+export SCRIPT_AGENT_MODEL_KEY=...   # never commit this
+/tmp/script-agent agent \
+  --prompt 'Inspect the workspace and summarize it.' \
+  --workspace "$(mktemp -d)" \
+  --provider openai-compatible \
+  --endpoint https://example.invalid/v1/chat/completions \
+  --model MODEL_ID \
+  --api-key-env SCRIPT_AGENT_MODEL_KEY
+```
+
+The integration suite uses a local TLS fixture instead of a public endpoint, so
+no test reaches the network. `--ca-file` is the explicit trust-root input that
+makes that fixture work; it is not a mock-provider switch.
+
 ## Cross-build
 
 ```sh
@@ -218,7 +239,7 @@ Steps:
 13. `CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' ./cmd/script-agent ./cmd/script-agent-artifacts`
 
 The workflow runs both the default unit suite and the tagged real integration
-suite. The `integration/` suite is **44 top-level tests / 56 cases**; the root
+suite. The `integration/` suite is **47 top-level tests / 59 cases**; the root
 `TestIntegration` is a separate tagged check. The workflow uses no secrets, no
 private modules, no external services, and no e2e environment beyond the
 integration tests. All Go modules are public.

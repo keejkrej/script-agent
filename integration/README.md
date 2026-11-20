@@ -18,6 +18,7 @@ directory only; the default `go test ./...` run does not execute them.
 | `errors_deny_test.go` | Read-only mutations are denied in both languages with the guest's own codes; Bash is denied before any process starts; the CLI requires `--workspace`; `--code`/`--file` are mutually exclusive; source caps and malformed numeric flags produce a JSON `invalid_request` and exit 2. |
 | `limits_test.go` | Public `Agent` output/source/timeout limits for Python and QuickJS; `limit_exceeded` retains the byte prefix; valid runs have only normal fields; outer deadline and cancellation are reported as `timed_out`/`cancelled`; concurrent runs; idempotent `Close` with no in-flight leak. |
 | `bash_test.go` | Real Bash process execution: host env is not inherited, `$PWD` is the workspace, the source is one literal argv element, non-zero exit is a failed result with the exit code, stdout/stderr caps are independent, timeout/cancel/group cleanup, warnings, invalid-UTF-8 and Unicode output, NUL rejection, CLI exit codes 1/124/130/134. |
+| `conversation_tls_test.go` | The `agent` subcommand against a local `httptest.NewTLSServer` with an explicit `--ca-file`: two-completion Python tool loop, `Authorization` header, tool-result correlation, Bash environment isolation, and Bash denial before any process starts. |
 | `artifacts_test.go` | `script-agent-artifacts list`/`verify` against the real committed assets; native binary size and stripped symbol table; Linux and Windows cross-compiles. |
 | `clean_copy_test.go` | A `.git`-free copy of the tree builds and tests with `-mod=readonly`; the only replace is the relative vendored `third_party/pi-go`; `go.mod`/`go.sum` are not modified. |
 | `helpers_test.go` | Shared build/run/decode helpers. |
@@ -53,18 +54,18 @@ Environment: macOS, `darwin/arm64`, Go 1.27.4, `CGO_ENABLED=0`.
 | `go vet ./...` | ok |
 | `go vet -tags scriptagent_integration ./...` | ok |
 | `go test ./...` | ok (all packages; `integration` reports `[no test files]` without the tag) |
-| `go test -tags scriptagent_integration ./...` | ok; `integration` ~9.5-10.6s, `process` ~2.7s, others < 1s |
+| `go test -tags scriptagent_integration ./...` | ok; `integration` ~13-16s, `process` ~2.8s, others < 2s |
 | `go test -race -count=1 ./...` | ok |
-| `go test -race -count=1 -tags scriptagent_integration ./integration` | ok, ~18s |
+| `go test -race -count=1 -tags scriptagent_integration ./integration` | ok, ~23-29s |
 
-Integration suite: **44 top-level tests / 56 test cases**, all passing,
-~9.5s without the race detector.
+Integration suite: **47 top-level tests / 59 test cases**, all passing,
+~13-16s without the race detector.
 
 ## Binary and artifact metrics
 
 | Item | Value |
 | --- | --- |
-| Native binary | `8,452,770` bytes (8.06 MiB), Mach-O 64-bit arm64, stripped (`-s -w`; no `main.main`/`runtime.main` symbols) |
+| Native binary | `11,458,898` bytes (10.93 MiB), Mach-O 64-bit arm64, stripped (`-s -w`; no `main.main`/`runtime.main` symbols) |
 | QuickPy artifact | `256,486` bytes, SHA-256 `5fdd351a70e0f65a4b812ad21c34a0885f87e839aee7721164768907ad61f50a`, ABI 4, MicroPython 1.29.0 |
 | QuickJS artifact | `637,405` bytes, SHA-256 `d4c9375f2b1ca4dc95f72c8aa2982a7a9951ac8011490d79c6582df732b4bbd9`, QuickJS-WASI 3.6.2 (QuickJS-NG 0.17.0) |
 | Linux cross-compile | `GOOS=linux GOARCH=amd64` builds a stripped static ELF |

@@ -1,16 +1,19 @@
 # script-agent
 
 A native Go library and CLI for running one Python, JavaScript, or Bash script
-in an explicit workspace and returning a structured JSON result.
+in an explicit workspace and returning a structured JSON result, plus a bounded
+one-shot conversation loop that lets an OpenAI-compatible model drive those
+three tools.
 
-`script-agent` is an execution coordinator, not an agent loop. It owns one
-workspace, one runtime-neutral capability adapter, and one engine per language.
-It does not provide a model provider, a chat loop, a persistent environment, or
-a daemon.
+`script-agent` is an execution coordinator with a small, synchronous agent
+loop. It owns one workspace, one runtime-neutral capability adapter, and one
+engine per language. The `agent` subcommand adds one stdlib-only
+OpenAI-compatible provider and a bounded conversation; it does not add a chat
+UI, a model catalog, a persistent environment, or a daemon.
 
-**Status:** candidate `0.1.0` native execution core. It is working and
-independently reviewed, but it is not production GA, not a Prime/RLM agent, and
-not a general OS sandbox.
+**Status:** candidate `0.1.0` native execution core with a bounded agent loop.
+It is working and independently reviewed, but it is not production GA, not a
+Prime/RLM agent, and not a general OS sandbox.
 
 Published through PR **#1**:
 <https://github.com/keejkrej/script-agent/pull/1> (base `main`, head
@@ -34,13 +37,21 @@ Published through PR **#1**:
 - **Structured results**: status, ordered output, structured error, Bash exit
   code, warnings, and duration.
 - **Stable CLI JSON contract** with documented exit codes.
+- **Bounded agent loop** through `script-agent agent`: one OpenAI-compatible
+  Chat Completions endpoint, three tools (`python_repl`, `javascript_repl`,
+  `bash_repl`), sequential tool execution, and hard turn/token/byte limits.
+- **Explicit provider policy**: full HTTPS endpoint, one named API-key
+  environment variable, optional explicit CA file, no ambient key or base URL,
+  no redirects, and no host proxy.
 - **Artifact verification** through `cmd/script-agent-artifacts`.
 - **Opt-in end-to-end suite** in `integration/` that builds the native binary
-  and verifies the CLI and library contract.
+  and verifies the CLI, library, and local TLS provider contract.
 
 ## What this is not
 
 - Not a full Prime/RLM agent, provider daemon, or persistent environment.
+- Not a chat UI, model catalog, or multi-provider router. The `agent`
+  subcommand speaks one OpenAI-compatible Chat Completions endpoint.
 - Not a live interpreter or serialized process context. Each execution gets
   fresh globals (Python/JavaScript) or a fresh process (Bash). Workspace files
   persist; interpreter state does not.
@@ -49,6 +60,8 @@ Published through PR **#1**:
   Windows; Python and JavaScript are not a tested Windows target.
 - Not a package manager or network client. Python and JavaScript have no
   ambient network access; Bash runs with the host user's authority.
+- Not a model proxy or egress filter. When the `agent` subcommand is used, the
+  user's prompt and tool results are sent to the endpoint the user chose.
 
 ## Quick start
 
@@ -246,6 +259,96 @@ Text output is a JSON string. Bash captures raw bytes and converts them to a
 string, so non-UTF-8 bytes may be replaced when JSON-encoded. Image data is raw
 bytes and is base64-encoded in JSON.
 
+## Agent command
+
+`script-agent agent` runs one bounded conversation. A model is asked to inspect
+a workspace through three tools, and the terminal `ConversationResult` is
+printed as one JSON document on stdout.
+
+```sh
+script-agent agent \
+  --prompt 'Inspect the workspace and summarize it.' \
+  --workspace /absolute/workspace \
+  --provider openai-compatible \
+  --endpoint https://example.invalid/v1/chat/completions \
+  --model MODEL_ID \
+  --api-key-env SCRIPT_AGENT_MODEL_KEY
+```
+
+The endpoint is the **full** Chat Completions URL. The command never appends a
+path, never reads `OPENAI_API_KEY` or `OPENAI_BASE_URL`, and never guesses a
+base URL. The only credential input is the named environment variable; its
+value is sent only as `Authorization: Bearer ...` and is never printed.
+
+| Flag | Meaning | Default / constraint |
+| --- | --- | --- |
+| `--prompt` | User prompt. | Required. |
+| `--workspace` | Existing workspace directory. | Required. |
+| `--provider` | Provider name. | Required; only `openai-compatible`. |
+| `--endpoint` | Full Chat Completions URL. | Required; absolute HTTPS with a host and path. |
+| `--model` | Model identifier. | Required. |
+| `--api-key-env` | Environment variable holding the API key. | Required; read once, never echoed. |
+| `--ca-file` | PEM file with additional trust roots. | Optional; added to the system pool, never disables verification. |
+| `--write` | Allow workspace writes. | Off by default. Mutually exclusive with `--readonly`. |
+| `--readonly` | Explicit read-only marker. | Default posture. Mutually exclusive with `--write`. |
+| `--allow-process` | Allow Bash process execution. | Off by default. Sets both the executor and conversation grants. |
+| `--timeout` | Conversation timeout. | `30s`; must be greater than zero. |
+| `--max-source-bytes` | Script source cap. | `256 KiB`; must be in `1..256 MiB`. |
+| `--max-output-bytes` | Script output cap. | `1 MiB`; must be in `1..1 GiB`. |
+| `--max-turns` | Model completions. | `8`; must be in `1..32`. |
+| `--max-tokens` | Completion token cap per turn. | `4096`; must be in `1..32768`. |
+| `--max-tool-calls` | Executed tool calls. | `16`; must be in `1..64`. |
+| `--max-tool-result-bytes` | Serialized tool result sent to the model. | `64 KiB`; must be in `1..1 MiB`. |
+| `--max-history-bytes` | Serialized transcript before each completion. | `4 MiB`; must be in `1..64 MiB`. |
+| `--transcript` | Include the full message transcript. | Off by default. |
+
+The tools are exactly `python_repl`, `javascript_repl`, and `bash_repl`. Each
+call runs in a fresh VM or process; workspace files persist. The model never
+supplies a language, permission, environment, endpoint, credential, working
+directory, or process flag. Bash needs both `--allow-process` and the
+executor's `Config.AllowProcess`; the CLI sets both.
+
+### Agent JSON contract
+
+stdout is exactly one `ConversationResult` JSON document:
+
+- `status`: the same status values as the single-script result.
+- `response`: the final assistant text for a completed conversation.
+- `turns`: the number of model completions.
+- `toolResults`: ordered tool results, each with `toolCallId`, `toolName`,
+  `isError`, `truncated`, and the nested execution `result`.
+- `usage`: aggregate `prompt_tokens`, `completion_tokens`, and `total_tokens`.
+- `messages`: present only with `--transcript`.
+- `error`: structured failure for a non-completed status.
+- `duration`: wall-clock time in nanoseconds.
+
+A completed conversation may contain failed or denied tool results; those are
+observations for the model, not an automatic top-level failure. The process
+exit code follows the conversation status, not a script exit code.
+
+### Agent security notes
+
+- The provider transport disables `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`,
+  never follows redirects, and always verifies TLS. `--ca-file` only adds
+  explicit trust roots.
+- The model provider is a network boundary. The user's prompt and tool results
+  are sent to the endpoint the user chose. There is no model proxy or egress
+  filter, and the sandbox cannot stop a model from asking to read the
+  workspace.
+- Bash is a host process, not a sandbox. With `--allow-process` it has the host
+  user's full OS authority, can use the network, and can leave the workspace.
+  The controlled environment does not inherit the provider key.
+- Prompt injection is in scope: the user is trusted, but model output is not.
+  The model cannot grant itself writes or process execution.
+- The wire profile is narrow: one non-streaming Chat Completions request and
+  response, tool messages with an optional `name`, and assistant tool-call
+  messages whose `content` is `""` rather than `null`. Some strict vendors
+  reject that shape, so there is no universal "OpenAI-compatible" claim.
+- Provider errors are deliberately generic (transport, status, or protocol)
+  and never include the endpoint, bodies, or key. That hides detail an operator
+  might want when debugging an authentication failure; it is a trade-off, not
+  an oversight.
+
 ## Library API
 
 ```go
@@ -345,6 +448,35 @@ CLI sets `MaxExecutions` to `1`.
 `Agent` is safe for concurrent use up to `MaxExecutions`. Python and JavaScript
 engines are initialized lazily on first use. `Close` stops admission, waits for
 in-flight executions, and then releases the engines and workspace.
+
+### Conversation
+
+The root package also exposes the bounded loop the `agent` subcommand uses:
+
+```go
+type Model interface {
+    Complete(context.Context, ModelRequest) (ModelResponse, error)
+}
+
+type ScriptExecutor interface {
+    Run(context.Context, Request) Result
+    Config() Config
+}
+
+func NewConversation(ConversationConfig) (*Conversation, error)
+func (c *Conversation) Run(context.Context, ConversationRequest) ConversationResult
+```
+
+`ConversationConfig` takes the executor, the model, the model id, an optional
+system prompt, and the turn/token/tool/history limits. `ConversationRequest`
+takes the user prompt and the conversation-level Bash grant. A `Conversation`
+does not own or close the executor, and each `Run` starts a fresh in-memory
+transcript. There is no session persistence.
+
+`ConversationResult` carries `status`, `response`, `turns`, ordered
+`toolResults`, aggregate `usage`, optional `messages`, `error`, and `duration`.
+The provider boundary is `Model`; `internal/openaicompatible` is the only
+production implementation and is not a public package.
 
 ## Languages
 

@@ -15,10 +15,12 @@ UI, a model catalog, a persistent environment, or a daemon.
 It is working and independently reviewed, but it is not production GA, not a
 Prime/RLM agent, and not a general OS sandbox.
 
-Published through PR **#1**:
+Published through PR **#1** (native execution core):
 <https://github.com/keejkrej/script-agent/pull/1> (base `main`, head
-`feat/native-polyglot-core`). Use
-`gh pr view 1 --json state,mergeCommit` to resolve the final merge result.
+`feat/native-polyglot-core`). The bounded agent loop is published through PR
+**#5**: <https://github.com/keejkrej/script-agent/pull/5> (base `main`, head
+`feat/agent-loop`). Use
+`gh pr view 5 --json state,mergeCommit` to resolve the final merge result.
 
 ## What works now
 
